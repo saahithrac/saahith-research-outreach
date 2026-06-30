@@ -245,6 +245,9 @@ def faculty_manager(df):
     st.subheader("2) Faculty target database")
     st.caption("UNC Gillings and Duke-Margolis are capped at 50 targets each. NCCU RCMI/RCHDR is flexible: use verified relevant contacts only; do not force 50.")
     st.dataframe(validate_faculty(df), use_container_width=True, hide_index=True)
+    st.caption("Field counts currently in your CSV:")
+    field_counts = df.groupby(["institution", "field_of_study"]).size().reset_index(name="rows")
+    st.dataframe(field_counts, use_container_width=True, hide_index=True)
 
     with st.expander("Import/export faculty CSV", expanded=False):
         uploaded = st.file_uploader("Upload updated faculty_targets.csv", type=["csv"])
@@ -264,7 +267,7 @@ def faculty_manager(df):
         wave = st.selectbox("Wave", ["All"] + sorted([x for x in df["wave"].unique().tolist() if str(x).strip()]))
     with col4:
         q = st.text_input("Search name, department, keywords, papers, notes")
-    hide_placeholders = st.checkbox("Hide placeholder rows", value=True)
+    hide_placeholders = st.checkbox("Hide placeholder rows", value=False, help="Leave this OFF while building the database so you can see all TBD slots across all fields.")
 
     sub = df.copy()
     if inst != "All":
@@ -279,11 +282,13 @@ def faculty_manager(df):
     if hide_placeholders:
         sub = sub[(sub["name"].str.strip() != "") & (~sub["name"].str.contains("TBD", case=False, na=False))]
 
+    st.write(f"Showing **{len(sub)}** of **{len(df)}** rows.")
     st.dataframe(sub, use_container_width=True, hide_index=True)
-    st.info("The filtered table above is view-only. To type into cells, use the editable table below or edit data/faculty_targets.csv in GitHub.")
+    st.info("The filtered table above is view-only. To type into cells, use the editable table below. In v6 it is open by default and starts with the FULL database.")
 
-    with st.expander("Edit faculty database inside the app", expanded=False):
+    with st.expander("Edit faculty database inside the app - FULL TABLE", expanded=True):
         st.caption("Edit cells here, then click Save edits. For permanent GitHub storage, also download the updated CSV and upload/commit it to data/faculty_targets.csv in GitHub.")
+        st.warning("This table shows the FULL faculty_targets.csv by default. Scroll horizontally to edit columns like field_of_study, recent_work, paper titles, URLs, verification_status, wave, and priority.")
         edited = st.data_editor(
             df,
             use_container_width=True,
@@ -397,7 +402,7 @@ def queue_view():
 
 def main():
     st.title("📬 Saahith Research Outreach Builder")
-    st.markdown("A review-first cold outreach tool for health equity, health policy, biostatistics, epidemiology, GIS, and public health data-analysis internships.")
+    st.markdown("A review-first cold outreach tool for health equity, health policy, biostatistics, epidemiology, GIS, and public health data-analysis internships. **v6: full editable faculty table is open by default.**")
     profile = load_profile()
     df = ensure_columns(load_csv(FACULTY_CSV))
     tab1, tab2, tab3, tab4 = st.tabs(["Profile", "Faculty database", "Draft emails", "Queue/export"])
@@ -412,8 +417,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
 
