@@ -280,7 +280,46 @@ def faculty_manager(df):
         sub = sub[(sub["name"].str.strip() != "") & (~sub["name"].str.contains("TBD", case=False, na=False))]
 
     st.dataframe(sub, use_container_width=True, hide_index=True)
-    st.info("Use the field_of_study column to sort/filter by Epidemiology, Health Policy and Management, Health Behavior, Maternal and Child Health, Biostatistics, GIS/Spatial Analysis, and related areas.")
+    st.info("The filtered table above is view-only. To type into cells, use the editable table below or edit data/faculty_targets.csv in GitHub.")
+
+    with st.expander("Edit faculty database inside the app", expanded=False):
+        st.caption("Edit cells here, then click Save edits. For permanent GitHub storage, also download the updated CSV and upload/commit it to data/faculty_targets.csv in GitHub.")
+        edited = st.data_editor(
+            df,
+            use_container_width=True,
+            hide_index=True,
+            num_rows="dynamic",
+            column_config={
+                "selected": st.column_config.CheckboxColumn("selected"),
+                "institution": st.column_config.SelectboxColumn("institution", options=INSTITUTIONS),
+                "field_of_study": st.column_config.SelectboxColumn("field_of_study", options=FIELDS[1:]),
+                "verification_status": st.column_config.SelectboxColumn(
+                    "verification_status",
+                    options=[
+                        "needs_verification",
+                        "verified",
+                        "verified_no_paper_reference",
+                        "unverified",
+                    ],
+                ),
+                "priority": st.column_config.SelectboxColumn("priority", options=["High", "Medium", "Low"]),
+                "wave": st.column_config.SelectboxColumn("wave", options=["Wave 1", "Wave 2", "Wave 3", "Wave 4", "Wave 5", "Hold"]),
+                "source_url": st.column_config.LinkColumn("source_url"),
+                "paper_1_url": st.column_config.LinkColumn("paper_1_url"),
+                "paper_2_url": st.column_config.LinkColumn("paper_2_url"),
+            },
+            key="faculty_editor",
+        )
+        edited = ensure_columns(edited.fillna(""))
+        c_save, c_download = st.columns(2)
+        with c_save:
+            if st.button("Save edits in app", type="primary", use_container_width=True):
+                save_csv(edited, FACULTY_CSV)
+                st.success("Saved in the app. To make it permanent across redeploys, download and commit the CSV to GitHub.")
+                st.rerun()
+        with c_download:
+            st.download_button("Download updated faculty_targets.csv", edited.to_csv(index=False), "faculty_targets.csv", "text/csv", use_container_width=True)
+
     return df
 
 def draft_workspace(df, profile):
@@ -373,3 +412,8 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+
+
